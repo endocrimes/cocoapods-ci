@@ -26,7 +26,7 @@ module Pod
 
       def create_spec_repo!
         Pod::UI.info 'Creating ephemeral specs repo'
-        repo_path = Dir.mktempdir('cocoapods-ci')
+        repo_path = Dir.mktmpdir('cocoapods-ci')
         repo_path.join('Specs').mkpath
         fake_source = Pod::MasterSource.new(repo_path)
 

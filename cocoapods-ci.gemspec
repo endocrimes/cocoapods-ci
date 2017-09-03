@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = CocoapodsCi::VERSION
   spec.authors       = ['Danielle Tomlinson', 'Samuel Giddins']
   spec.email         = ['dan@tomlinson.io', 'segiddins@segiddins.me']
-  spec.description   = 'A CocoaPods plugin to install pods without having the specs repo'
+  spec.summary       = 'A CocoaPods plugin to install pods without having the specs repo'
   spec.homepage      = 'https://github.com/endocrimes/cocoapods-ci'
   spec.license       = 'MIT'
 
