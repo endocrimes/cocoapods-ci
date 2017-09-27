@@ -7,6 +7,24 @@ module Pod
     # `master` repo and install them.
     #
     class Ci < Command
+      class API
+        def initialize(url)
+          @base_url = url
+        end
+
+        def fetch(url)
+          response = Net::HTTP.get_response(URI(url))
+          case response
+          when Net::HTTPSuccess then response.body
+          when Net::HTTPFound then fetch(response['location'])
+          end
+        end
+
+        def fetch_spec(name, version)
+          fetch File.join(@base_url, 'specs', name, version.to_s, 'podspec.json')
+        end
+      end
+
       self.summary = 'Install Pods without cloning the master specs repo.'
 
       def initialize(argv)
@@ -27,19 +45,19 @@ module Pod
       def create_spec_repo!
         Pod::UI.info 'Creating ephemeral specs repo'
         repo_path = Dir.mktmpdir('cocoapods-ci')
-        repo_path.join('Specs').mkpath
+        FileUtils.mkpath("#{repo_path}/Specs")
         fake_source = Pod::MasterSource.new(repo_path)
 
         download_and_store_specs(fake_source, config.lockfile)
 
         sources_manager = config.sources_manager
         def sources_manager.source_repos
-          cleaned = super.select {|r| r.basename != 'master' }
+          cleaned = super.reject { |r| r.basename == 'master' }
           cleaned << repo_path
         end
 
         Pod::UI.info 'Setting up a fake git repo' do
-          Pod::Executable.execute_command :git, %W(-C #{repo_path} init .)
+          Pod::Executable.execute_command :git, %W[-C #{repo_path} init .]
           Pod::Executable.execute_command :git, %W[-C #{repo_path} remote add origin https://github.com/CocoaPods/Specs.git]
         end
       end
@@ -61,7 +79,7 @@ module Pod
           spec_contents = api_client.fetch_spec(name, version)
           path = source.pod_path(name).join(version.to_s, "#{name}.podspec.json")
           path.parent.mkpath
-          spec_path.open("w") {|f| f.write(spec_contents) }
+          path.open('w') { |f| f.write(spec_contents) }
         end
       end
 
@@ -73,7 +91,7 @@ module Pod
       end
 
       def api_client
-        @api_client ||= CocoapodsCi::API.new(service_url)
+        @api_client ||= API.new(service_url)
       end
 
       def service_url
